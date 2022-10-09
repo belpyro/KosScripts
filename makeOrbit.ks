@@ -4,7 +4,7 @@ local continue to apo > 0.
 
 if (continue){
     clearScreen.
-    print "Start burning".
+    print "Prepare burning".
     sas off.
     rcs off.
 
@@ -19,7 +19,9 @@ if (continue){
     local pgd to prograde.
     lock steering to pgd.
 
+    print "Set burning vector".
     wait until vAng(ship:facing:forevector, pgd:vector) <= 0.1.
+    print "Start burning".
     wait 1.    
 
     local mTr to 0.

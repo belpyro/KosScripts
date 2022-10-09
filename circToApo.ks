@@ -1,6 +1,6 @@
 clearScreen.
 sas off.
-rcs on.
+rcs off.
 
 show("Start Circ.").
 wait 1.
@@ -20,12 +20,12 @@ local lock V2 to vxcl(ship:up:vector, V1):normalized * sqrt(ship:body:mu/(ship:b
 local lock V3 to V2 - V1.
 
 lock steering to V3.
-show("Wait steering with V3 " + V3:mag + " deltaV").
+show("Waiting steering with V3 " + round(V3:mag) + " deltaV").
 wait until vAng(ship:facing:forevector, V3) <= 0.5.
 
-if(eta:apoapsis > 60)
+if(eta:apoapsis > 10)
 {
-    warpto(time:seconds + eta:apoapsis - 60).
+    warpto(time:seconds + eta:apoapsis - 10).
 }
 
 local pid to pidLoop(3, 0.0015, 0, 0.0001, 1).
@@ -34,7 +34,7 @@ set pid:setpoint to 1e-5.
 local mtR to 0.
 lock throttle to mtR.
 
-show("Wait APO").
+show("Waiting APO").
 wait until eta:apoapsis <= 0.5.
 
 show("Start Burn").
