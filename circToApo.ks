@@ -51,9 +51,6 @@ rcs off.
 show("End Circularization!").
 wait 3.
 
-unlock throttle.
-unlock steering.
-
 function show{
     parameter m.
 

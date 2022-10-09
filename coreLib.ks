@@ -30,7 +30,7 @@ function transfernode {
   return list(phitrans, etatrans, deltav).
 }
 
-FUNCTION ApoBurn
+FUNCTION apoBurn
 {
 	local Vh to VXCL(Ship:UP:vector, ship:velocity:orbit):mag.	//Считаем горизонтальную скорость
 	local Vz to ship:verticalspeed. // это вертикальная скорость
@@ -50,13 +50,22 @@ FUNCTION ApoBurn
 	RETURN LIST(Fi, DeltaA/AThr, dVh).	//Возвращаем лист с данными.
 }
 
-function UnlockAll{
+function unlockAll {
   unlock throttle.
   unlock steering.
   set ship:control:pilotmainthrottle to 0.
 }
 
-set ApoBurnFunc to ApoBurn@.
+function openAllAntenas {
+  local modules to ship:modulesnamed("ModuleDeployableAntenna").
+  for module in modules
+  {
+    module:doevent("Раскрыть антенну").
+  }  
+}
+
+set ApoBurnFunc to apoBurn@.
 set TransferNodeFunc to transfernode@.
-set UnlockAllFunc to UnlockAll@.
+set UnlockAllFunc to unlockAll@.
+set openAntennas to openAllAntenas@.
 
