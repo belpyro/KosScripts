@@ -5,14 +5,6 @@ rcs off.
 show("Start Circ.").
 wait 1.
 
-when eta:apoapsis <= 60 then { 
-    if (warp > 0)
-    {
-       set warp to 0. 
-    }
-    preserve. 
-}
-
 warpto(time:seconds + eta:apoapsis - 60).
 
 local lock V1 to ship:velocity:orbit.

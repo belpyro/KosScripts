@@ -42,6 +42,15 @@ FROM {local x is 1.} UNTIL x = 4 STEP {set x to x+1.} DO {
     print "Deploy " + x + " probe".
     deployProbe().
 
+    if(x = 3){
+        print "Deorbit and kill".
+        wait 3.
+        deadVessel().
+        wait 1.
+        print "Bye Bye!".
+        shutdown.
+    }
+
     wait 3.
     print "Start to deorbit of 2/3 current period".
     runPath("deorbit", 2/3).
@@ -50,6 +59,15 @@ FROM {local x is 1.} UNTIL x = 4 STEP {set x to x+1.} DO {
     wait 1.
     print "Deorbit finished. Start circularization".   
     runPath("circToApo").
+}
+
+function deadVessel {
+    lock steering to retrograde.
+    wait until vAng(ship:facing:forevector, retrograde:vector) <= 1.
+    lock throttle to 1.
+    wait until ship:obt:periapsis <= 30000.
+    lock throttle to 0.
+    UnlockAllFunc().
 }
 
 function deployProbe {
