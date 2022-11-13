@@ -39,8 +39,10 @@ if (vExists){
 
     until false
     {
+        clearScreen.
         printData(calculateCurrentAngle(calculatedAngle)[0], calculatedAngle).
         local delta to round(calculateCurrentAngle(calculatedAngle)[0] - calculatedAngle).
+        print "Target: " + round(targetVessel:longitude,1) + " Ship: " + round(ship:longitude,1) at(1,5).
         print "Locla diff: " + delta at(1,4).
         if(delta <= 3 and delta > 0){
             set warp to 0.
@@ -87,19 +89,31 @@ if (vExists){
     print "Current Ang: " + vAng((ship:position - kerbin:position):normalized,(targetVessel:position - kerbin:position):normalized) at(1,5).
     wait 5.
 
+function ISH {
+    parameter a.
+    parameter b.
+    parameter ishness.
+    return a - ishness < b and a + ishness > b.
+}
+
     function calculateNeededAngle
     {
         local A1 to (targetVessel:altitude + ship:body:radius*2 + ship:altitude)/2.
-        local A2 to (targetVessel:altitude + ship:body:radius).
+        local A2 to (targetVessel:obt:semimajoraxis).
         return 180*(1-((sqrt(A1^3/A2^3)))) - targetAngle.
     }
 
     function calculateCurrentAngle{
         parameter exAngle.
-        local deltaAngle to (targetVessel:longitude - ship:longitude).
-        if (deltaAngle < 0){
-            set deltaAngle to 360 + deltaAngle.
-        }
+        local tgtLng to targetVessel:longitude.
+        local shipLng to ship:longitude.
+
+        // if tgtLng < 0 { set tgtLng to tgtLng + 360. }
+        // if shipLng < 0 { set shipLng to shipLng + 360. }
+        local deltaAngle to mod(tgtLng - shipLng + 720, 360). //(tgtLng - shipLng).
+        // if (deltaAngle < 0) {
+        //     set deltaAngle to 360 + deltaAngle.
+        // }
 
         local canBurn to abs(round(deltaAngle - exAngle)) <= 0.1.
         return list(deltaAngle, canBurn).

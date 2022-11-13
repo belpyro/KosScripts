@@ -30,7 +30,7 @@ function transfernode {
   return list(phitrans, etatrans, deltav).
 }
 
-FUNCTION apoBurn
+FUNCTION apoBurnFunc
 {
 	local Vh to VXCL(Ship:UP:vector, ship:velocity:orbit):mag.	//Считаем горизонтальную скорость
 	local Vz to ship:verticalspeed. // это вертикальная скорость
@@ -39,18 +39,19 @@ FUNCTION apoBurn
 	local g_orb to ship:Body:Mu/Rad^2. //Ускорение своб. падения на этой высоте.
 	//set ThrIsp to ship:availablethrust. //EngThrustIsp возвращает суммарную тягу и средний Isp по всем активным двигателям.
 	local AThr to 1.
-  if Throttle>0
+  if Throttle > 0
 		set AThr to ship:availableThrust*Throttle/(ship:mass). //Ускорение, которое сообщают ракете активные двигатели при тек. массе. 
 	else
 		set AThr to ship:availableThrust/(ship:mass). //Ускорение, которое сообщают ракете активные двигатели при тек. массе. 
 	local ACentr to Vh^2/Rad. //Центростремительное ускорение.
 	local DeltaA to g_orb-ACentr-Max(Min(Vz,2),-2). //Уск своб падения минус центр. ускорение с поправкой на гашение вертикальной скорости.
-	local Fi to arcsin(max(min(DeltaA/AThr, 0.707), -0.707)). // Считаем угол к горизонту так, чтобы держать вертикальную скорость = 0.
+  local divA to DeltaA/AThr.
+	local Fi to arcsin(max(min(divA, 0.707), -0.707)). // Считаем угол к горизонту так, чтобы держать вертикальную скорость = 0.
 	local dVh to Vorb-Vh. //Дельта до первой косм.
-	RETURN LIST(Fi, DeltaA/AThr, dVh).	//Возвращаем лист с данными.
+	RETURN LIST(Fi, divA, dVh).	//Возвращаем лист с данными.
 }
 
-function unlockAll {
+function unlockAllFunc {
   unlock throttle.
   unlock steering.
   set ship:control:pilotmainthrottle to 0.
@@ -64,8 +65,64 @@ function openAllAntenas {
   }  
 }
 
-set ApoBurnFunc to apoBurn@.
-set TransferNodeFunc to transfernode@.
-set UnlockAllFunc to unlockAll@.
+function testPartFunc {
+  parameter tag.
+  local testModuleName to "ModuleTestSubject".
+  local parts to ship:partstagged(tag).
+  for part in parts{
+    if (part:hasmodule(testModuleName)){
+      part:modulesnamed(testModuleName)[0]:doevent("Провести испытание").
+    }
+  }
+}
+
+function doScienceFunc {
+  local scienceModuleName to "ModuleScienceExperiment".
+  local modules to ship:modulesnamed(scienceModuleName).
+  for md in modules{
+      md:deploy.
+      wait until md:hasdata.
+      md:transmit.    
+  }
+}
+
+
+function doScienceByTagFunc {
+  parameter tag.
+  parameter isSend is true.
+  local scienceModuleName to "ModuleScienceExperiment".
+  local part to ship:partstagged(tag)[0].
+  local module to part:getmodule(scienceModuleName).
+  module:deploy.
+  wait until module:hasdata.
+  if (isSend) {
+    module:transmit. 
+  } 
+}
+
+function copyFile {
+    parameter fName.
+    switch to 0.
+    run my.
+    copyPath(fName, "1:").
+    switch to 1.
+}
+
+function calculateAscentAngle {
+    local parameter neededAngle.
+    local parameter neededAlt.
+    local percentOfAlt to ship:altitude/neededAlt.
+    local pushAngle to 90-neededAngle.
+    return max(0, round(90 - pushAngle*(percentOfAlt^(1/2)),1)).
+}
+
+set apoBurn to apoBurnFunc@.
+set transferNodeFunc to transfernode@.
+set unlockAll to unlockAllFunc@.
 set openAntennas to openAllAntenas@.
+set cp to copyFile@.
+set calcAscAngle to calculateAscentAngle@.
+set testPart to testPartFunc@.
+set doScience to doScienceFunc@.
+set doScienceByTag to doScienceByTagFunc@.
 

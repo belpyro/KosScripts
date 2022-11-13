@@ -1,3 +1,4 @@
+@lazyGlobal off.
 declare parameter finalTouchDownSpeed is 2, pointOfVerticalSpeed is 100.
 
 clearScreen.
@@ -9,6 +10,22 @@ if (not addons:available("KER")){
 
 sas off.
 rcs off.
+
+when maxThrust <= 0 then { stage. preserve. }
+
+local mtR to 1.
+
+if (ship:status = "orbiting") {
+  lock steering to retrograde.
+  wait until vAng(ship:facing:forevector, retrograde:vector) <= 1.
+  local vel to ship:velocity:orbit:mag.
+  wait 3.
+  clearScreen.
+  print "Start landing burn".
+  lock throttle to mtR.
+  wait until ship:velocity:orbit:mag <= 0.1*vel.
+  set mtR to 0.
+}
 
 local suicide to addons:ker:suicide. 
 lock steering to srfRetrograde.
@@ -30,14 +47,13 @@ until suicide:countdown <= 1
 clearScreen.
 print "Start Landing" at(1,1).
 
-local mtR to 1.
 lock throttle to mtR.
 
 clearScreen.
-print "Wait vertical speed 100 m/s" at(1,1).
-wait until ship:verticalspeed >= -pointOfVerticalSpeed.
+print "Wait vertical speed" + pointOfVerticalSpeed + "m/s" at(1,1).
+wait until ship:verticalspeed >= -pointOfVerticalSpeed or suicide:countdown <= 1.
 
-local pid to pidLoop(3, 0, 0.0035, 0.00001, 1).
+local pid to pidLoop(3, 0, 0.0035, 0, 1).
 set pid:setpoint to 0.5.
 local landingStep to 1.
 
@@ -63,11 +79,15 @@ until ship:status = "LANDED"
     wait 0.01.
 }
 
-lock throttle to 0.
+set mtR to 0.
+set ship:control:pilotmainthrottle to 0.
+unlock throttle.
+unlock steering.
+
+rcs on.
+sas on.
 
 clearScreen.
 print "Landed!!!".
 wait 3.
 
-unlock throttle.
-unlock steering.

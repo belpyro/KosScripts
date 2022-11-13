@@ -1,3 +1,5 @@
+@lazyGlobal off.
+
 declare parameter targetBodyName is "Mun", transToNextPath is false.
 
 sas off.

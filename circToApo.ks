@@ -1,3 +1,5 @@
+@lazyGlobal off.
+
 clearScreen.
 sas off.
 rcs off.
@@ -37,8 +39,10 @@ until obt:eccentricity <= 1e-5
 }
 
 set mtR to 0.
-UnlockAllFunc().
 rcs off.
+
+unlockAll().
+
 
 show("End Circularization!").
 wait 3.
