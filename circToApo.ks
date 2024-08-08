@@ -1,3 +1,5 @@
+runOncePath("coreLib").
+
 clearScreen.
 sas off.
 rcs off.

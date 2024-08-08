@@ -64,6 +64,98 @@ function openAllAntenas {
   }  
 }
 
+function ISH {
+  parameter a is 0.
+  parameter b is 0.
+  parameter epsilon is 0.
+
+  return (a + epsilon) < b and (b - epsilon) > a.  
+}
+
+function IsRange {
+    parameter start is 0. //apo
+    parameter stop is 0.
+    parameter actual is 0.
+
+    return actual >= start and actual >= stop.
+}
+
+function VectorReorder {
+  parameter vct is V(0,0,0).
+  parameter order is 123.
+
+  if(order = 123){
+    return V(vct:x, vct:y, vct:z).
+  }  
+  if(order = 132){
+    return V(vct:x, vct:z, vct:y).    
+  }
+  if(order = 213){
+    return V(vct:y, vct:x, vct:z).    
+  }
+  if(order = 231){
+    return V(vct:y, vct:z, vct:x).    
+  }
+  if(order = 312){
+    return V(vct:z, vct:x, vct:y).    
+  }
+  if(order = 321){
+     return V(vct:z, vct:y, vct:x).   
+  }
+  return vct.
+}
+
+function SwapYZ {
+    parameter vector.
+    return VectorReorder(vector, 132).
+}
+
+function RadialPlus {
+    return vxcl(prograde:vector, up:vector):normalized.
+}
+
+function RadialMinus {
+    return -RadialPlus().
+}
+
+function NormalPlus {
+    return vCrs(prograde:vector, RadialPlus()):normalized.
+}
+
+function NormalMinus {
+    return -NormalPlus().
+}
+
+function TargetPlus {
+  parameter tgt is target.
+  return (tgt:position - ship:position):normalized.
+}
+
+function TargetMinus {
+  parameter tgt is target.
+  return -TargetPlus(tgt).
+}
+
+function TargetVelPlus {
+    parameter tgt is target.
+    return (ship:velocity:orbit - tgt:velocity:orbit):normalized.
+}
+
+function TargetVelMinus {
+    parameter tgt is target.
+    return -TargetVelPlus(tgt).
+}
+
+function RelativeVel {
+  parameter tgt is target.
+  return (ship:velocity:orbit - tgt:velocity:orbit):mag.
+}
+
+function targetDistance {
+    parameter tgt is target.
+    return (ship:position - tgt:position):mag.
+}
+
 set ApoBurnFunc to apoBurn@.
 set TransferNodeFunc to transfernode@.
 set UnlockAllFunc to unlockAll@.
