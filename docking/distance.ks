@@ -3,28 +3,6 @@
 sas off.
 rcs off.
 
-// local vel_v is vecDraw().
-// local pos_v is vecDraw().
-// lock rel_v to ship:velocity:obt - target:velocity:obt.
-// lock rel_pos to target:position - ship:position.
-// lock test_dir to (rel_pos/20 - rel_v).
-// lock steering to (test_dir):direction.
-// local dv is calculateDeltaVToTarget().
-// // lock steering to dv:direction.
-
-// until false {
-//     clearScreen.
-//     print "Rel velocity is " + round(rel_v:mag,2) + " m/s. And rel speed " + round(vDot(rel_v, prograde:forevector),2) at(0,0). 
-//     print "Distance is " + round(rel_pos:mag,2) at(0,1). 
-//     print "Rel angle " + vAng(rel_pos, rel_v) + " and correction is " + test_dir:mag at(0,2). 
-//     set vel_v:vec to rel_v*20.
-//     set vel_v:show to true.
-//     set pos_v:vec to rel_pos.
-//     set pos_v:show to true.
-//     set pos_v:color to rgba(255,0,0, 255).
-//     wait 0.1.
-// }
-
 //Вектор на цель
 LOCK TargetVector TO Target:ORBIT:POSITION-SHIP:ORBIT:POSITION.
 //Вектор относительной скорости
