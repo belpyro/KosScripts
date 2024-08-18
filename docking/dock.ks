@@ -1,7 +1,4 @@
 @lazyGlobal off.
-declare parameter tgt_name.
-
-set target to vessel(tgt_name).
 
 clearScreen.
 print "Looking for proper Docking ports".
@@ -9,26 +6,22 @@ wait 3.
 
 local ship_port is "".//ship:dockingports[0].
 local target_port is "".//target:dockingports[0].
-local hasShipPort is false.
-local hasTgtPort is false.
 
 for s_port in ship:dockingports {
     if(s_port:state:contains("Ready")){
         set ship_port to s_port.
-        set hasShipPort to true.
         break.
     }
 }
 
-for t_port in target:dockingports {
-    if(t_port:state:contains("Ready")){
-        set target_port to t_port.
-        set hasTgtPort to true.
-        break.
-    }
+until target_port:istype("DockingPort") {
+    clearScreen.
+    print "Please, select target port".
+    if (hasTarget) { set target_port to target. }    
+    wait 0.1.
 }
 
-if not (hasShipPort and hasTgtPort) {
+if not ship_port:istype("DockingPort") {
     clearScreen.
     print "Active and Ready Docking Port has not found! System will be rebooted after 3 sec.".
     wait 3.
@@ -36,13 +29,14 @@ if not (hasShipPort and hasTgtPort) {
 }
 
 reset().
+ship_port:CONTROLFROM().
 
 local port_distance is target_port:position - ship_port:position.
-local delta_vel is target:velocity:obt - ship:velocity:obt.
+local delta_vel is target_port:ship:velocity:obt - ship:velocity:obt.
 
 lock steering to lookDirUp(-target_port:facing:vector, target_port:facing:upvector).
 
-local vz_pid is pidLoop(1.2, 8.4, 0.04, -1, 1).
+local vz_pid is pidLoop(0.8, 8.4, 0.04, -1, 1).
 local vy_pid is pidLoop(0.8, 8.4, 0.04, -1, 1).
 local vx_pid is pidLoop(0.8, 8.4, 0.04, -1, 1).
 
@@ -53,13 +47,14 @@ local speedX is round(vDot(delta_vel, ship_port:facing:starvector),2).
 local speedY is round(vDot(delta_vel, ship_port:facing:upvector),2).
 local speedZ is round(vDot(delta_vel, ship_port:facing:forevector),2).
 local facing_angle is round(vAng(ship:facing:forevector, port_distance),2).
-local top_angle is round(vAng(ship:facing:topvector, target:facing:topvector),2).
+local top_angle is round(vAng(ship:facing:upvector, target_port:facing:upvector),2).
 local operation is "Initial".
 
 local max_speed TO 2.0.  // Максимальная скорость 2 м/с
 local coefficient TO 0.1.  // Коэффициент экспоненциального уменьшения
 local target_speed_x IS max_speed * (1 - constant:e^(-coefficient * abs(deltaX))).
 local target_speed_y IS max_speed * (1 - constant:e^(-coefficient * abs(deltaY))).
+local target_speed_z is 0.
 
 rcs on.
 
@@ -69,12 +64,15 @@ until ( deltaZ - 10 >= 0 ) { // задняя полусфера. двигаем�
         updateData().
         printStatus().
 
-        set ship:control:fore to vz_pid:update(time:seconds, 10 - deltaZ).
+        if ISBETWEEN(speedZ, 0.5, 1) { set ship:control:fore to 0. }
+        else {
+            set ship:control:fore to vz_pid:update(time:seconds, 10 - deltaZ).
+        }        
    
         set ship:control:starboard to vx_pid:update(time:seconds, -speedX).
-        set ship:control:top to vy_pid:update(time:seconds, -speedY). //speedY*10.
-        
-        wait 0.01.
+        set ship:control:top to vy_pid:update(time:seconds, -speedY).
+
+        wait 0.001.
 }
 
 set ship:control:starboard to 0.
@@ -87,8 +85,7 @@ vz_pid:reset().
 
 wait 1.
 
-until ship_port:state:contains("Docked") {
-
+until ship_port:ACQUIRERANGE * 2 >= port_distance:mag {
     updateData().
     printStatus().
     
@@ -98,20 +95,19 @@ until ship_port:state:contains("Docked") {
     set target_speed_y to max_speed * (1 - constant:e^(-coefficient * abs(deltaY)))*SIGN(deltaY).
     set vy_pid:setpoint to target_speed_y.
 
-    if ( facing_angle <= 5 and top_angle <= 5) {
-        set ship:control:fore to vz_pid:update(time:seconds, -(speedZ + 0.5 + deltaZ/100)).
-        // set ship:control:starboard to speedX*10.
-        // set ship:control:top to speedY*10. //speedY*10.
+    set target_speed_z to max_speed * (1 - constant:e^(-coefficient * abs(deltaZ)))*SIGN(deltaZ).
+    set vz_pid:setpoint to target_speed_z.
+
+    if ( facing_angle <= 5 ) {
+        set ship:control:fore to vz_pid:update(time:seconds, -speedZ).
         set operation to "Move to forward".
-    } else {
-        // set ship:control:starboard to vx_pid:update(time:seconds, -speedX).//-(speedX/4 + (1*deltaX)/100)).
-        // set ship:control:top to vy_pid:update(time:seconds, -speedY).//-(speedY/4 + (1*deltaY)/100)). //speedY*10.
+    } else {       
         set ship:control:fore to speedZ*10.
         set operation to "Docking".
     }    
     
-    set ship:control:starboard to vx_pid:update(time:seconds, -speedX).//-(speedX/4 + (1*deltaX)/100)).
-    set ship:control:top to vy_pid:update(time:seconds, -speedY).//-(speedY/4 + (1*deltaY)/100)). //speedY*10.
+    set ship:control:starboard to vx_pid:update(time:seconds, -speedX).
+    set ship:control:top to vy_pid:update(time:seconds, -speedY).
 
     wait 0.01.
 }
@@ -137,7 +133,7 @@ local function reset {
 
 local function updateData {
     set port_distance to target_port:position - ship_port:position.
-    set delta_vel to target:velocity:obt - ship:velocity:obt.
+    set delta_vel to target_port:ship:velocity:obt - ship:velocity:obt.
     set deltaX to round(vDot(port_distance, ship_port:facing:starvector),2).
     set deltaY to round(vDot(port_distance, ship_port:facing:upvector),2).
     set deltaZ to round(vDot(port_distance, ship_port:facing:forevector),2).
@@ -145,7 +141,7 @@ local function updateData {
     set speedY to round(vDot(delta_vel, ship_port:facing:upvector),2).
     set speedZ to round(vDot(delta_vel, ship_port:facing:forevector),2).
     set facing_angle to round(vAng(ship:facing:forevector, port_distance),2).
-    set top_angle to round(vAng(ship:facing:topvector, target:facing:topvector),2).
+    set top_angle to round(vAng(ship:facing:topvector, target_port:facing:upvector),2).
 }
 
 // Function to determine the sign of a number
@@ -189,6 +185,7 @@ local function printStatus {
 
     print "Target speed X " + round(target_speed_x,2) at(0,9).
     print "Target speed Y " + round(target_speed_y,2) at(22,9).
+    print "Target speed Z " + round(target_speed_z,2) at(0,10).
 
     print "Operation: " + operation at(0, 11).
 }
